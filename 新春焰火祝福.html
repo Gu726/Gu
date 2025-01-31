@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新春焰火祝福</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'SimHei', sans-serif;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: gold;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.7);
+            text-align: center;
+            display: none;
+            line-height: 1.5;
+            max-width: 80%;
+            white-space: pre-wrap;
+        }
+        .footer {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            color: #bbb;
+            font-size: 18px;
+            font-family: 'SimHei', sans-serif;
+            background-color: transparent;
+            padding: 5px 10px;
+            text-align: right;
+        }
+        .bless-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            background-color: #ff4b4b;
+            color: white;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        .bless-btn:hover {
+            background-color: #e03e3e;
+        }
+        .good-luck-wrapper {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+        }
+
+        .good-luck {
+            font-size: 24px;
+            color: gold;
+            opacity: 1;
+            pointer-events: none;
+            animation: scatterEffect 2s forwards;
+        }
+
+        @keyframes scatterEffect {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-200px) scale(0.5);
+            }
+        }
+
+        .good-luck-wrapper .good-luck {
+            animation: scatterEffect 2s forwards;
+        }
+
+        /* 2025 彩色艺术字体 */
+        .artistic-text {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 80px;
+            font-weight: bold;
+            color: transparent;
+            background-clip: text;
+            animation: colorCycle 5s linear infinite;
+        }
+
+        @keyframes colorCycle {
+            0% {
+                color: #ff0000; /* 红色 */
+            }
+            25% {
+                color: #ff8c00; /* 橙色 */
+            }
+            50% {
+                color: #32cd32; /* 绿色 */
+            }
+            75% {
+                color: #1e90ff; /* 蓝色 */
+            }
+            100% {
+                color: #ff00ff; /* 紫色 */
+            }
+        }
+
+        /* 新春祝福语 */
+        .new-year-blessings {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 40px;
+            color: gold;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.7);
+            text-align: center;
+            line-height: 1.5;
+            max-width: 90%;
+            white-space: pre-wrap;
+            display: none;
+        }
+
+    </style>
+</head>
+<body>
+
+<canvas id="fireworkCanvas"></canvas>
+<div class="new-year-blessings" id="blessingText"></div>
+
+<!-- 右下角署名 -->
+<div class="footer">
+    Designed by Gu
+</div>
+
+<!-- 祈福按钮 -->
+<button class="bless-btn" id="blessButton">祈福</button>
+
+<!-- 好运+1 动态渐隐 -->
+<div class="good-luck-wrapper" id="goodLuckWrapper">
+    <div class="good-luck" id="goodLuckText" style="display: none;">好运+1</div>
+</div>
+
+<!-- 循环绘制的2025 -->
+<div class="artistic-text" id="artisticText">2025</div>
+
+<script>
+    const canvas = document.getElementById('fireworkCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // 创建渐变背景
+    function drawGradientBackground() {
+        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, '#1d1d1d');  // 深黑色
+        gradient.addColorStop(0.5, '#292929'); // 稍浅的灰色
+        gradient.addColorStop(1, '#1a1a1a');  // 深色渐变，提升质感
+
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // 烟花粒子类
+    class Firework {
+        constructor(x, y, type) {
+            this.x = x;
+            this.y = y;
+            this.size = Math.random() * 3 + 2;
+            this.color = `rgb(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255})`;
+            this.speedX = Math.random() * 6 - 3;
+            this.speedY = Math.random() * 6 - 3;
+            this.lifetime = 100;
+            this.type = type;
+        }
+
+        update() {
+            this.x += this.speedX;
+            this.y += this.speedY;
+            this.speedY += 0.05;  // 模拟重力
+            this.lifetime--;
+            this.size = Math.max(0, this.size - 0.05);
+        }
+
+        draw() {
+            if (this.type === 'sparkle') {
+                // 星星形状
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(this.x + this.size, this.y + this.size);
+                ctx.lineTo(this.x - this.size, this.y + this.size);
+                ctx.closePath();
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            } else if (this.type === 'line') {
+                // 线形爆炸
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(this.x + this.size, this.y + this.size);
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = this.color;
+                ctx.stroke();
+            } else if (this.type === 'heart') {
+                // 爱心形状
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.bezierCurveTo(this.x - this.size, this.y - this.size, this.x - this.size, this.y + this.size, this.x, this.y + this.size * 2);
+                ctx.bezierCurveTo(this.x + this.size, this.y + this.size, this.x + this.size, this.y - this.size, this.x, this.y);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            } else if (this.type === 'star') {
+                // 五角星形状
+                ctx.beginPath();
+                const radius = this.size;
+                for (let i = 0; i < 5; i++) {
+                    const angle = i * (Math.PI * 2 / 5);
+                    const xOffset = Math.cos(angle) * radius;
+                    const yOffset = Math.sin(angle) * radius;
+                    if (i === 0) {
+                        ctx.moveTo(this.x + xOffset, this.y + yOffset);
+                    } else {
+                        ctx.lineTo(this.x + xOffset, this.y + yOffset);
+                    }
+                }
+                ctx.closePath();
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            } else if (this.type === 'circle') {
+                // 圆形形状
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+        }
+
+        isDead() {
+            return this.lifetime <= 0;
+        }
+    }
+
+    // 动态生成烟花
+    function createFirework(x, y, type) {
+        const particles = [];
+        for (let i = 0; i < 100; i++) {
+            particles.push(new Firework(x, y, type));
+        }
+        return particles;
+    }
+
+    // 显示祝福语
+    const messages = [
+        '恭喜发财',
+        '万事如意',
+        '心想事成',
+        '新春快乐',
+        '吉祥如意',
+        '合家欢乐',
+        '财源广进',
+        '步步高升',
+        '阖家幸福',
+        '大吉大利',
+        '年年有余',
+        '岁岁平安',
+        '福星高照',
+        '一帆风顺',
+        '天天开心',
+        '生活美满',
+        '好运常伴',
+        '笑口常开',
+        '福如东海'
+    ];
+    let messageIndex = 0;
+    const messageElement = document.getElementById('blessingText');
+
+    function showMessage() {
+        messageElement.textContent = messages[messageIndex];
+        messageElement.style.display = 'block';
+        messageElement.style.animation = 'fadeIn 1s forwards';
+        messageIndex = (messageIndex + 1) % messages.length;
+        setTimeout(() => {
+            messageElement.style.display = 'none';
+        }, 3000); // 3秒后隐藏祝福语
+    }
+
+    // 绑定祈福按钮点击事件
+    const blessButton = document.getElementById('blessButton');
+    const goodLuckText = document.getElementById('goodLuckText');
+
+    blessButton.addEventListener('click', () => {
+        // 显示祝福语
+        showMessage();
+
+        // 显示好运+1特效
+        goodLuckText.style.display = 'block';
+        goodLuckText.style.animation = 'scatterEffect 2s forwards';  // 应用特效
+
+        // 动态随机烟花
+        if (Math.random() < 0.05) {
+            let fireworkType = ['normal', 'sparkle', 'heart', 'star', 'circle'][Math.floor(Math.random() * 5)];
+            fireworks.push(createFirework(Math.random() * canvas.width, Math.random() * canvas.height, fireworkType));
+        }
+
+        // 2秒后隐藏好运+1
+        setTimeout(() => {
+            goodLuckText.style.display = 'none';
+        }, 2000);
+    });
+
+    // 主动画函数
+    let fireworks = [];
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawGradientBackground();  // 绘制背景
+
+        // 创建烟花
+        if (Math.random() < 0.05) {
+            let fireworkType = ['normal', 'sparkle', 'heart', 'star', 'circle'][Math.floor(Math.random() * 5)];
+            fireworks.push(createFirework(Math.random() * canvas.width, Math.random() * canvas.height, fireworkType));
+        }
+
+        // 更新并绘制烟花
+        for (let i = fireworks.length - 1; i >= 0; i--) {
+            for (let j = fireworks[i].length - 1; j >= 0; j--) {
+                let particle = fireworks[i][j];
+                particle.update();
+                particle.draw();
+                if (particle.isDead()) {
+                    fireworks[i].splice(j, 1);
+                }
+            }
+            if (fireworks[i].length === 0) {
+                fireworks.splice(i, 1);
+            }
+        }
+
+        requestAnimationFrame(animate);
+    }
+
+    animate(); // 启动动画
+</script>
+
+</body>
+</html>
